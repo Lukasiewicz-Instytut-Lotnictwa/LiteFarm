@@ -77,6 +77,7 @@ const emailTransporter = new EmailTemplates({
       'fr',
       'pt',
       'de',
+      'pl',
       // 'hi', 'pa', 'ml'
     ],
     directory: path.join(dir, 'locales'),

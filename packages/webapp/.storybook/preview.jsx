@@ -86,6 +86,7 @@ export const globalTypes = {
         { value: 'fr', title: 'French' },
         { value: 'pt', title: 'Portuguese' },
         { value: 'de', title: 'German' },
+        { value: 'pl', title: 'Polish' },
         { value: 'hi', title: 'Hindi' },
         { value: 'pa', title: 'Punjabi' },
         { value: 'ml', title: 'Malayalam' },

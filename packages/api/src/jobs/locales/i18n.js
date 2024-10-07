@@ -10,6 +10,7 @@ i18n.use(Backend).init(
       'pt',
       'fr',
       'de',
+      'pl',
       // 'hi', 'pa', 'ml'
     ],
     ns: ['translation', 'crop'],

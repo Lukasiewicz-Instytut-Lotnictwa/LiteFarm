@@ -12,13 +12,14 @@ i18n
     defaultNS: 'translation',
     nsSeparator: ':',
     fallbackLng: 'en',
-    supportedLngs: ['en', 'pt', 'es', 'fr', 'de'],
+    supportedLngs: ['en', 'pt', 'es', 'fr', 'de', 'pl'],
     locales: [
       'en',
       'pt',
       'es',
       'fr',
       'de',
+      'pl',
       // 'hi', 'pa', 'ml'
     ],
     debug: false,

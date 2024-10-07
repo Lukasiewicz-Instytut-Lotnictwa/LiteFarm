@@ -8,6 +8,7 @@ export default {
     'pt',
     'fr',
     'de',
+    'pl',
     // 'hi', 'pa', 'ml'
   ],
 };

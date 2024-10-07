@@ -19,6 +19,7 @@ const supportedLanguages = [
   ['de', 'Deutsch'],
   ['fr', 'Français'],
   ['pt', 'Português'],
+  ['pl', 'Polski'],
   // ['hi', 'हिंदी'],
   // ['ml', 'മലയാളം'],
   // ['pa', 'ਪੰਜਾਬੀ'],
