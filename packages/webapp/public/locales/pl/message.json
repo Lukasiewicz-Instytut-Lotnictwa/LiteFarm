@@ -1,5 +1,7 @@
 {
   "ANIMALS": {
+    "FAILED_CREATE_ANIMALS": "Nie udało się utworzyć zwierząt",
+    "FAILED_CREATE_BATCHES": "Nie udało się utworzyć partii",
     "FAILED_REMOVE_ANIMALS": "Nie udało się usunąć wybranych zwierząt",
     "FAILED_REMOVE_BATCHES": "Nie udało się usunąć wybranych partii",
     "SUCCESS_REMOVE_ANIMALS": "Pomyślnie usunięto wybrane zwierzęta",
@@ -47,7 +49,8 @@
       "ADD": "Nie udało się dodać nowych wydatków",
       "DELETE": "Nie udało się usunąć wydatków",
       "UPDATE": "Nie udało się zaktualizować wydatków!",
-      "EXPENSE_DELETED": "Ten wydatek już nie istnieje"
+      "EXPENSE_DELETED": "Ten wydatek już nie istnieje",
+      "EXPENSE_TYPE_DELETED": "Ten typ wydatku został usunięty"
     },
     "SUCCESS": {
       "ADD": "Pomyślnie dodano nowe wydatki!",
@@ -148,7 +151,8 @@
   },
   "REVENUE": {
     "ERROR": {
-      "EDIT": "Nie udało się zaktualizować przychodu"
+      "EDIT": "Nie udało się zaktulizować przychodu",
+      "REVENUE_TYPE_DELETED": "Ten typ przychodu został usunięty"
     },
     "SUCCESS": {
       "EDIT": "Przychód pomyślnie zaktualizowany"

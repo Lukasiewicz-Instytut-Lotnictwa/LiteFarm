@@ -29,12 +29,6 @@
     "WHITE": "Biały",
     "YELLOW": "Żółty"
   },
-  "TAG_PLACEMENT": {
-    "LEFT_EAR": "Lewe ucho",
-    "LEFT_LEG": "Lewa noga",
-    "RIGHT_EAR": "Prawe ucho",
-    "RIGHT_LEG": "Prawa noga"
-  },
   "TAG_TYPE": {
     "EAR_TAG": "Zawieszka na uchu",
     "LEG_BAND": "Opaska na nodze"
