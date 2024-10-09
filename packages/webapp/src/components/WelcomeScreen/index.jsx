@@ -5,6 +5,7 @@ import { ReactComponent as SignupSpanish } from '../../assets/images/signUp/sign
 import { ReactComponent as SignupPortuguese } from '../../assets/images/signUp/signup_portuguese.svg';
 import { ReactComponent as SignupFrench } from '../../assets/images/signUp/signup_french.svg';
 import { ReactComponent as SignupGerman } from '../../assets/images/signUp/signup_german.svg';
+import { ReactComponent as SignupPolish } from '../../assets/images/signUp/signup_polish.svg';
 import { ReactComponent as SignupHindi } from '../../assets/images/signUp/signup_hindi.svg';
 import { ReactComponent as SignupPunjabi } from '../../assets/images/signUp/signup_punjabi.svg';
 import PropTypes from 'prop-types';
@@ -19,6 +20,7 @@ export default function PureWelcomeScreen({ onClick }) {
     pt: <SignupPortuguese />,
     fr: <SignupFrench />,
     de: <SignupGerman />,
+    pl: <SignupPolish />,
     // hi: <SignupHindi />,
     // pa: <SignupPunjabi />,
   };
