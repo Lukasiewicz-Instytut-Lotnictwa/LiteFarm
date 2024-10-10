@@ -15,6 +15,8 @@ import SpanishOwnerConsent from './locales/es/Owner.Consent.md';
 import SpanishWorkerConsent from './locales/es/Worker.Consent.md';
 import GermanOwnerConsent from './locales/de/Owner.Consent.md';
 import GermanWorkerConsent from './locales/de/Worker.Consent.md';
+import PolishOwnerConsent from './locales/pl/Owner.Consent.md';
+import PolishWorkerConsent from './locales/pl/Worker.Consent.md';
 import HindiOwnerConsent from './locales/hi/Owner.Consent.md';
 import HindiWorkerConsent from './locales/hi/Worker.Consent.md';
 import PunjabiOwnerConsent from './locales/pa/Owner.Consent.md';
