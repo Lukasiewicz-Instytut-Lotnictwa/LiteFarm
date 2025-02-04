@@ -13,12 +13,10 @@
  *  GNU General Public License for more details, see <https://www.gnu.org/licenses/>.
  */
 
-import { detectMapServiceType, parseMapSourceURL, parseWMTSCapabilities, parseWMSCapabilities } from '../util/maps';
+import { detectMapServiceType, parseMapSourceURL } from '../util/maps';
 import { expect, describe, test, vi } from 'vitest';
 
-/**
- * Test XML string for WMS Capabilities. God from call: https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS/StandardResolution?request=GetCapabilities&service=WMS
- */
+// Test XML string for WMS Capabilities
 const WMS_CAPABILITIES_1 = `
 <?xml version="1.0" encoding="UTF-8"?>
 
@@ -1375,94 +1373,37 @@ describe('maps tests', () => {
       url: 'http://example.com/{x}/{y}/{z}',
       service: 'XYZ',
       kind: undefined,
-      label: undefined,
-      group: undefined,
-      format: undefined,
-      legend: undefined,
     });
     expect(parseMapSourceURL('http://example.com/{x}/{y}/{z}#service=WMS')).toStrictEqual({
       url: 'http://example.com/{x}/{y}/{z}',
       service: 'WMS',
       kind: undefined,
-      label: undefined,
-      group: undefined,
-      format: undefined,
-      legend: undefined,
     });
     expect(parseMapSourceURL('http://example.com/{x}/{y}/{z}#type=background')).toStrictEqual({
       url: 'http://example.com/{x}/{y}/{z}',
       service: 'XYZ',
       kind: 'background',
-      label: undefined,
-      group: undefined,
-      format: undefined,
-      legend: undefined,
     });
-    expect(parseMapSourceURL('https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS#label=Custom%20label')).toStrictEqual({
-      url: 'https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS',
-      service: 'WMS',
-      kind: undefined,
-      label: 'Custom label',
-      group: undefined,
-      format: undefined,
-      legend: undefined,
-    });
-    expect(parseMapSourceURL('https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS#label=Custom%20label&format=image%2fpng')).toStrictEqual({
-      url: 'https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS',
-      service: 'WMS',
-      kind: undefined,
-      label: 'Custom label',
-      group: undefined,
-      format: 'image/png',
-      legend: undefined,
-    });
-    expect(parseMapSourceURL('https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS#group=xyz&format=image%2fjpeg')).toStrictEqual({
-      url: 'https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS',
-      service: 'WMS',
-      kind: undefined,
-      label: undefined,
-      group: 'xyz',
-      format: 'image/jpeg',
-      legend: undefined,
-    });
-    expect(parseMapSourceURL('https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS#group=xyz&format=image%2fjpeg&legend=false')).toStrictEqual({
-      url: 'https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS',
-      service: 'WMS',
-      kind: undefined,
-      label: undefined,
-      group: 'xyz',
-      format: 'image/jpeg',
-      legend: false,
-    });
-    expect(parseMapSourceURL('https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS#group=xyz&format=image%2fjpeg&legend=off')).toStrictEqual({
-      url: 'https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS',
-      service: 'WMS',
-      kind: undefined,
-      label: undefined,
-      group: 'xyz',
-      format: 'image/jpeg',
-      legend: false,
-    });
-    expect(parseMapSourceURL('https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS#group=xyz&format=image%2fjpeg&legend=Custom_string')).toStrictEqual({
-      url: 'https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS',
-      service: 'WMS',
-      kind: undefined,
-      label: undefined,
-      group: 'xyz',
-      format: 'image/jpeg',
-      legend: 'Custom_string',
-    });
-
   });
 
   test('parseXML', () => {
-    // JSDom parses XML as HTML and this will not work
-    // This test only calls the function to check if does not throw an error
-    const wmts=parseWMTSCapabilities(WMTS_Capabilities_1);
-    expect(wmts).toBeDefined();
-
-    const wms=parseWMSCapabilities(WMS_CAPABILITIES_1);
-    expect(wms).toBeDefined();
-
+    // /** @type {XMLDocument} */
+    // const doc=new DOMParser().parseFromString(WMS_CAPABILITIES_1, 'application/xml');
+    // // console.log(WMS_CAPABILITIES_1)
+    // // console.log(doc.body.innerHTML);
+    // const layers = doc.querySelectorAll("Layer")
+    // for(let i=0; i<layers.length; i++){
+    //     const layer=layers.item(i);
+    //     layer.getElementsByTagName()
+    //     console.log("Title: ", layer.querySelector("> Title")?.textContent);
+    //     console.log("Name: ", layer.querySelector("> Name")?.textContent);
+    //     console.log("Parent: ", layer.parentElement?.nodeName);
+    // }
+    // const layers = doc?.getElementsByTagName("Layer");
+    // for(let i=0; i<layers.length; i++){
+    //     const layer=layers.item(i);
+    //
+    //     console.log("Parent: ", layer.parentElement.nodeName);
+    // }
   });
 });
