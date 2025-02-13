@@ -1373,16 +1373,49 @@ describe('maps tests', () => {
       url: 'http://example.com/{x}/{y}/{z}',
       service: 'XYZ',
       kind: undefined,
+      label: undefined,
+      group: undefined,
+      format: undefined,
     });
     expect(parseMapSourceURL('http://example.com/{x}/{y}/{z}#service=WMS')).toStrictEqual({
       url: 'http://example.com/{x}/{y}/{z}',
       service: 'WMS',
       kind: undefined,
+      label: undefined,
+      group: undefined,
+      format: undefined,
     });
     expect(parseMapSourceURL('http://example.com/{x}/{y}/{z}#type=background')).toStrictEqual({
       url: 'http://example.com/{x}/{y}/{z}',
       service: 'XYZ',
       kind: 'background',
+      label: undefined,
+      group: undefined,
+      format: undefined,
+    });
+    expect(parseMapSourceURL('https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS#label=Custom%20label')).toStrictEqual({
+      url: 'https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS',
+      service: 'WMS',
+      kind: undefined,
+      label: 'Custom label',
+      group: undefined,
+      format: undefined,
+    });
+    expect(parseMapSourceURL('https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS#label=Custom%20label&format=image%2fpng')).toStrictEqual({
+      url: 'https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS',
+      service: 'WMS',
+      kind: undefined,
+      label: 'Custom label',
+      group: undefined,
+      format: 'image/png',
+    });
+    expect(parseMapSourceURL('https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS#group=xyz&format=image%2fjpeg')).toStrictEqual({
+      url: 'https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS',
+      service: 'WMS',
+      kind: undefined,
+      label: undefined,
+      group: 'xyz',
+      format: 'image/jpeg',
     });
   });
 
