@@ -137,7 +137,7 @@ export function parseMapSourceURL(url: string): Partial<MapSourceSettings> {
   }
 
   // Detect the map service type if it is not defined in the URL.
-  if (!service) service = detectMapServiceType(url);
+  if (!service) service = detectMapServiceType(hashIndex===-1?url:url.substring(0, hashIndex));
 
   return {
     url: hashIndex === -1 ? url : url.substring(0, hashIndex),
