@@ -26,6 +26,12 @@ export type MapServiceType = 'WMS' | 'WMTS' | 'XYZ';
  */
 export type MapLayerKind = 'background' | 'transparent';
 
+
+/**
+ * Format of the map layer.
+ */
+export type MapLayerFormat = 'image/png' | 'image/jpeg' | 'image/svg+xml' | string;
+
 /**
  * Map source settings.
  */
@@ -44,6 +50,22 @@ export type MapSourceSettings = {
    * Kind of map layer.
    */
   kind: MapLayerKind;
+
+  /**
+   * Override the default (WMS/WMTS) label of the map source.
+   */
+  label?: string;
+
+  /**
+   * Radio group for the map source.
+   * It should be used for excluding layers from the same group.
+   */
+  group?: string;
+
+  /**
+   * Data format to be used for the map layer.
+   */
+  format?: MapLayerFormat;
 };
 
 /**
@@ -65,7 +87,7 @@ export function detectMapServiceType(url: string): MapServiceType | undefined {
 
 /**
  * Parse the map source URL and extract the map source settings
- * from query part of the URL.
+ * from hash part of the URL as a search params (URLSearchParams).
  * @param url - URL to the map source with optional query part parameters.
  * @returns Partial map source settings.
  */
@@ -76,33 +98,41 @@ export function parseMapSourceURL(url: string): Partial<MapSourceSettings> {
 
   let service: MapServiceType | undefined;
   let kind: MapLayerKind | undefined;
+  let label: string | undefined;
+  let group: string | undefined;
+  let format: MapLayerFormat | undefined;
 
   // Get extra parameters from the URL fragment part.
-
-  if (sp.has('service')) {
-    let serviceParam = sp.get('service');
-    sp.delete('service');
-    if (serviceParam) {
-      serviceParam = serviceParam.toUpperCase();
-      if (serviceParam === 'WMS') service = 'WMS';
-      else if (serviceParam === 'WMTS') service = 'WMTS';
-      else if (serviceParam === 'XYZ') service = 'XYZ';
-      else {
-        console.warn(`Unknown map source type: ${serviceParam}`);
+  for(const [key, value] of sp.entries()) {
+    switch(key) {
+      case 'service': {
+        const serviceParam=value.toUpperCase();
+        if (serviceParam === 'WMS') service = 'WMS';
+        else if (serviceParam === 'WMTS') service = 'WMTS';
+        else if (serviceParam === 'XYZ') service = 'XYZ';
+        else {
+          console.warn(`Unknown map source type: ${serviceParam}`);
+        }
+        break;
       }
-    }
-  }
-
-  if (sp.has('type')) {
-    let kindParam = sp.get('type');
-    sp.delete('type');
-    if (kindParam) {
-      kindParam = kindParam.toLowerCase();
-      if (kindParam === 'background') kind = 'background';
-      else if (kindParam === 'transparent') kind = 'transparent';
-      else {
-        console.warn(`Unknown map layer kind: ${kindParam}`);
+      case 'type': {
+        const kindParam=value.toLowerCase();
+        if (kindParam === 'background') kind = 'background';
+        else if (kindParam === 'transparent') kind = 'transparent';
+        else {
+          console.warn(`Unknown map layer kind: ${kindParam}`);
+        }
+        break;
       }
+      case 'label':
+        label=value;
+        break;
+      case 'group':
+        group=value;
+        break;
+      case 'format':
+        format=value as MapLayerFormat;
+        break;
     }
   }
 
@@ -113,6 +143,9 @@ export function parseMapSourceURL(url: string): Partial<MapSourceSettings> {
     url: hashIndex === -1 ? url : url.substring(0, hashIndex),
     service: service,
     kind: kind,
+    label: label,
+    group: group,
+    format: format,
   };
 }
 
