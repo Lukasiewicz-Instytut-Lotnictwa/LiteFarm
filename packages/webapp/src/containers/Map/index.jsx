@@ -28,6 +28,7 @@ import CustomZoom from '../../components/Map/CustomZoom';
 import CustomCompass from '../../components/Map/CustomCompass';
 import DrawingManager from '../../components/Map/DrawingManager';
 import useDrawingManager from './useDrawingManager';
+import useLayerManager from './useLayerManager.js';
 
 import useMapAssetRenderer from './useMapAssetRenderer';
 import { getLocations } from '../saga';
@@ -131,6 +132,8 @@ export default function Map({ history, isCompactSideMenu }) {
       setShowZeroLengthWarning,
     },
   ] = useDrawingManager();
+
+  const { initLayerManager } = useLayerManager();
 
   useEffect(() => {
     if (drawingState.pointChanged) dispatch(setIsRedrawing(true));
@@ -287,6 +290,8 @@ export default function Map({ history, isCompactSideMenu }) {
       POLYLINE: maps.drawing.OverlayType.POLYLINE,
       MARKER: maps.drawing.OverlayType.MARKER,
     });
+
+    initLayerManager(map, maps);
 
     // Adding custom map components
     const zoomControlDiv = document.createElement('div');
