@@ -16,6 +16,8 @@
 import JSZip from 'jszip';
 import { useEffect, useState } from 'react';
 import { mediaEnum } from '../MediaWithAuthentication/constants';
+import {useSelector} from "react-redux";
+import {userFarmSelector} from "../userFarmSlice";
 
 export default function useMediaWithAuthentication({
   fileUrls = [],
@@ -26,11 +28,14 @@ export default function useMediaWithAuthentication({
   const [mediaUrl, setMediaUrl] = useState();
   const [zipContent, setZipContent] = useState();
   const [isLoading, setIsLoading] = useState(true);
+  const { farm_id } = useSelector(userFarmSelector);
 
   useEffect(() => {
     const config = {
       headers: {
-        Authorization: 'Bearer ' + localStorage.getItem('farm_token'),
+        Authorization: 'Bearer ' + localStorage.getItem('id_token'),
+        'Farm_id': farm_id,
+        // 'Accept': 'application/json, text/plain, */*',
       },
       responseType: 'arraybuffer',
       method: 'GET',
@@ -61,11 +66,12 @@ export default function useMediaWithAuthentication({
         } else {
           const fileUrl = fileUrls[0];
           if (fileUrl) {
-            if (import.meta.env.VITE_ENV === 'development') {
-              subscribed && setMediaUrl(fileUrl);
-            } else {
+            // if (import.meta.env.VITE_ENV === 'development') {
+            //   subscribed && setMediaUrl(fileUrl);
+            // } else
+            {
               const url = new URL(fileUrl);
-              url.hostname = 'images.litefarm.workers.dev';
+              // url.hostname = 'images.litefarm.workers.dev';
               const response = await fetch(url.toString(), config);
               const blobFile = await response.blob();
               subscribed && setMediaUrl(URL.createObjectURL(blobFile));

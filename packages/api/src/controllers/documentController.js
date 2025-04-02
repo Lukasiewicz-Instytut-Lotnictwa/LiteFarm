@@ -24,7 +24,44 @@ import {
   getRandomFileName,
   getPrivateS3Url,
 } from '../util/digitalOceanSpaces.js';
-import { PutObjectCommand } from '@aws-sdk/client-s3';
+import {GetObjectCommand, PutObjectCommand} from '@aws-sdk/client-s3';
+import { getEnvBool  } from "../util/env.js"
+import path from "path";
+
+const useInternalS3 = getEnvBool("S3_USE_INTERNAL_FILE_SERVICE", false);
+
+
+/**
+ * Fix file paths for files to use internal file service
+ */
+function fixFilePaths(result) {
+  if(!useInternalS3 || !process.env.API_PUBLIC_URL || !result) return result;  // Don't fix if we are using external S3
+  const { farm_id } = result;
+
+  const prefix= process.env.API_PUBLIC_URL+'/document/farm/'+farm_id;
+  if(result.thumbnail_url) {
+    result.thumbnail_url=prefix+'/'+result.document_id+'/'+result.document_id+'/t/thumbnail.webp';
+  }
+  const files=result.files;
+  if(!Array.isArray(files) || files.length === 0) return result;
+  for(const f of files) {
+    const url=prefix+'/'+f.document_id+'/'+f.file_id;
+    const fn=encodeURIComponent(f.file_name);
+
+    if(f.url) f.url=url+'/o/'+fn; // Original file
+    if(f.thumbnail_url) f.thumbnail_url=url+'/t/thumbnail.webp'; // Thumbnail file
+  }
+  return result;
+}
+
+function fixResults(results) {
+  if(Array.isArray(results)) {
+    for(const r of results) fixFilePaths(r);
+  } else if(Array.isArray(results?.files)) {
+    return fixFilePaths(results);
+  }
+  return results;
+}
 
 const documentController = {
   getDocumentsByFarmId() {
@@ -36,13 +73,70 @@ const documentController = {
           .withGraphFetched('[files]')
           .where({ farm_id });
         return result?.length
-          ? res.status(200).send(result)
+          ? res.status(200).send(fixResults(result))
           : res.status(404).send('No documents found');
       } catch (error) {
         console.error(error);
         return res.status(400).json({ error });
       }
     };
+  },
+  downloadDocument() {
+    return async(req, res, next) => {
+      const { farm_id, document_id, file_id, type } = req.params;
+      const isThumbnail = (type === 'thumbnail' || type === 't');
+
+      const result = await DocumentModel.query()
+          .context(req.auth)
+          .findById(document_id)
+          .withGraphFetched('[files]')
+          .where({ farm_id, document_id });
+      console.log("Document request: "+req.url+", params: "+JSON.stringify(req.params));
+      console.log("Got result: "+JSON.stringify(result));
+
+      if (!result) return res.status(404).send('Document not found');
+
+      let file;
+      // Special case for thumbnail of document and not individual file
+      if(document_id===file_id && isThumbnail) {
+        file=result.files?.find(f => !!f.thumbnail_url);
+      } else {
+        file=result.files?.find(f => f.file_id === file_id);
+      }
+      if (!file) {
+        console.log("File not found: "+file_id);
+        return res.status(404).send('File not found');
+      }
+
+      // We need to remove prefix from file_name
+      const url=isThumbnail?file.thumbnail_url:file.url;
+      console.log("File key: "+url);
+      let response;
+      try {
+        response = await s3.send(
+            new GetObjectCommand({
+              Bucket: getPrivateS3BucketName(),
+              Key: url,
+              ACL: 'private',
+            }),
+        );
+      }catch (e) {
+        console.log("Error getting file: "+e);
+        return res.status(500).send('Error getting file');
+      }
+      console.log("Got response: "+ response?.ETag);
+      if(!response?.Body) {
+        return res.status(404).send('File not found');
+      }
+      // Transform the response to http response
+      res.status(200).header({
+        'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(file.file_name)}`,
+      })
+      if(response.ContentLength) res.header('Content-Length', response.ContentLength);
+      if(response.ContentType) res.header('Content-Type', response.ContentType);
+
+      response.Body.pipe(res);
+    }
   },
   createDocument() {
     return async (req, res, next) => {
@@ -52,7 +146,7 @@ const documentController = {
             .context({ user_id: req.auth.user_id })
             .upsertGraph(req.body, { noUpdate: true, noDelete: true });
         });
-        return res.status(201).send(result);
+        return res.status(201).send(fixResults(result));
       } catch (error) {
         console.log(error);
         res.status(400).json({
@@ -87,7 +181,7 @@ const documentController = {
             .context({ user_id: req.auth.user_id })
             .upsertGraph({ document_id, ...req.body });
         });
-        return res.status(201).send(result);
+        return res.status(201).send(fixResults(result));
       } catch (err) {
         console.log(err);
         return res.status(400).json({
@@ -118,13 +212,13 @@ const documentController = {
         if (req.isMinimized) {
           await uploadOriginalDocument();
           return res.status(201).json({
-            url: `${getPrivateS3Url()}/${fileName}`,
-            thumbnail_url: `${getPrivateS3Url()}/${fileName}`,
+            url: fileName,
+            thumbnail_url: fileName,
           });
         } else if (req.isTextDocument) {
           await uploadOriginalDocument();
           return res.status(201).json({
-            url: `${getPrivateS3Url()}/${fileName}`,
+            url: fileName,
           });
         } else if (req.isNotMinimized) {
           const THUMBNAIL_FORMAT = 'webp';
@@ -150,8 +244,8 @@ const documentController = {
           );
 
           return res.status(201).json({
-            url: `${getPrivateS3Url()}/${fileName}`,
-            thumbnail_url: `${getPrivateS3Url()}/${thumbnailName}`,
+            url: fileName,
+            thumbnail_url: thumbnailName,
           });
         }
         return req.status(400);

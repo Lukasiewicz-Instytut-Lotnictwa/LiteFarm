@@ -30,6 +30,13 @@ router.get(
   documentController.getDocumentsByFarmId(),
 );
 
+router.get(
+    "/farm/:farm_id/:document_id/:file_id/:type?/:file_name?",
+    hasFarmAccess({ params: 'farm_id' }),
+    checkScope(['get:document']),
+    documentController.downloadDocument(),
+)
+
 router.post(
   '/upload/farm/:farm_id',
   hasFarmAccess({ params: 'farm_id' }),
