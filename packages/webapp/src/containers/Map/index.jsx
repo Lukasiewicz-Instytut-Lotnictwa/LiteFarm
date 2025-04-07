@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import { createRoot } from 'react-dom/client';
 import { useTranslation } from 'react-i18next';
 import styles from './styles.module.scss';
@@ -133,7 +133,7 @@ export default function Map({ history, isCompactSideMenu }) {
     },
   ] = useDrawingManager();
 
-  const { initLayerManager } = useLayerManager();
+  const { initLayerManager } = useLayerManager(filterSettings);
 
   useEffect(() => {
     if (drawingState.pointChanged) dispatch(setIsRedrawing(true));
@@ -154,7 +154,7 @@ export default function Map({ history, isCompactSideMenu }) {
   const [showDrawAreaSpotlightModal, setShowDrawAreaSpotlightModal] = useState(false);
   const [showDrawLineSpotlightModal, setShowDrawLineSpotlightModal] = useState(false);
 
-  const getMapOptions = (maps) => {
+  const getMapOptions = useCallback((maps) => {
     return {
       styles: [
         {
@@ -186,7 +186,8 @@ export default function Map({ history, isCompactSideMenu }) {
       rotateControl: false,
       fullscreenControl: false,
     };
-  };
+  }, []);
+
   const { drawAssets, assetGeometriesRef, markerClusterRef } = useMapAssetRenderer({
     isClickable: !drawingState.type,
     drawingState: drawingState,
