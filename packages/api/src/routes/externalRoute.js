@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019, 2020, 2021, 2022 LiteFarm.org
+ *  Copyright 2024 LiteFarm.org
  *  This file is part of LiteFarm.
  *
  *  LiteFarm is free software: you can redistribute it and/or modify
@@ -13,26 +13,13 @@
  *  GNU General Public License for more details, see <https://www.gnu.org/licenses/>.
  */
 
-import { expressjwt } from 'express-jwt';
+import express from 'express';
+import ExternalController from '../controllers/externalController.js';
 
-const checkJwt = expressjwt({
-  secret: process.env.JWT_SECRET,
-  algorithms: ['HS256'],
-}).unless({
-  path: [
-    '/user',
-    '/login',
-    '/password_reset',
-    '/user/accept_invitation',
-    '/user_farm/accept_invitation',
-    '/notification_user/subscribe',
-    '/irrigation_prescription_request/scheduler',
-    /\/time_notification\//i,
-    /\/farm\/utc_offset_by_range\//i,
-    /\/api-docs\/*/,
-    /\/api-spec\/*/,
-    /\/external\/*/,
-  ],
-});
+const router = express.Router();
 
-export default checkJwt;
+// router.get('/refresh');
+
+router.post('/push_notification/:farm_id', ExternalController.pushNotification());
+
+export default router;
