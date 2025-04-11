@@ -26,7 +26,6 @@ export type MapServiceType = 'WMS' | 'WMTS' | 'XYZ';
  */
 export type MapLayerKind = 'background' | 'transparent';
 
-
 /**
  * Format of the map layer.
  */
@@ -72,7 +71,17 @@ export type MapSourceSettings = {
    * or a HTML string with the legend content.
    * `false` if we don't want to display the legend.
    */
-  legend?: string|false;
+  legend?: string | false;
+
+  /**
+   * Maximum zoom level for the map source.
+   */
+  maxZoom?: number;
+
+  /**
+   * Size of the tile in pixels.
+   */
+  tileSize?: number | [number, number];
 };
 
 /**
@@ -111,10 +120,10 @@ export function parseMapSourceURL(url: string): Partial<MapSourceSettings> {
   let legend: string | false | undefined;
 
   // Get extra parameters from the URL fragment part.
-  for(const [key, value] of sp.entries()) {
-    switch(key) {
+  for (const [key, value] of sp.entries()) {
+    switch (key) {
       case 'service': {
-        const serviceParam=value.toUpperCase();
+        const serviceParam = value.toUpperCase();
         if (serviceParam === 'WMS') service = 'WMS';
         else if (serviceParam === 'WMTS') service = 'WMTS';
         else if (serviceParam === 'XYZ') service = 'XYZ';
@@ -124,7 +133,7 @@ export function parseMapSourceURL(url: string): Partial<MapSourceSettings> {
         break;
       }
       case 'type': {
-        const kindParam=value.toLowerCase();
+        const kindParam = value.toLowerCase();
         if (kindParam === 'background') kind = 'background';
         else if (kindParam === 'transparent') kind = 'transparent';
         else {
@@ -133,26 +142,33 @@ export function parseMapSourceURL(url: string): Partial<MapSourceSettings> {
         break;
       }
       case 'label':
-        label=value;
+        label = value;
         break;
       case 'group':
-        group=value;
+        group = value;
         break;
       case 'format':
-        format=value as MapLayerFormat;
+        format = value as MapLayerFormat;
         break;
       case 'legend':
-        if(value==='false' || value==='' || value==='0' || value==='no' || value==='off') {
-          legend=false;
+        if (
+          value === 'false' ||
+          value === '' ||
+          value === '0' ||
+          value === 'no' ||
+          value === 'off'
+        ) {
+          legend = false;
         } else {
-            legend=value;
+          legend = value;
         }
         break;
     }
   }
 
   // Detect the map service type if it is not defined in the URL.
-  if (!service) service = detectMapServiceType(hashIndex===-1?url:url.substring(0, hashIndex));
+  if (!service)
+    service = detectMapServiceType(hashIndex === -1 ? url : url.substring(0, hashIndex));
 
   return {
     url: hashIndex === -1 ? url : url.substring(0, hashIndex),
@@ -161,7 +177,7 @@ export function parseMapSourceURL(url: string): Partial<MapSourceSettings> {
     label: label,
     group: group,
     format: format,
-    legend: legend
+    legend: legend,
   };
 }
 
@@ -181,27 +197,27 @@ function getRootNodeName(doc: XMLDocument): string {
   return doc.documentElement.nodeName;
 }
 
-function getTextContent(list: NodeList|Array<Node>): Array<string> {
-  let res: Array<string>=[];
-  for(const node of list) {
-    if(node.textContent) res.push(node.textContent);
+function getTextContent(list: NodeList | Array<Node>): Array<string> {
+  let res: Array<string> = [];
+  for (const node of list) {
+    if (node.textContent) res.push(node.textContent);
   }
 
   return res;
 }
 
 function getImmediateNodes(node: Node, nodeName: string): Array<Node> {
-  let res: Array<Node>=[];
-  for(const child of node.childNodes) {
-    if(child.nodeType===Node.ELEMENT_NODE && child.nodeName===nodeName) res.push(child);
+  let res: Array<Node> = [];
+  for (const child of node.childNodes) {
+    if (child.nodeType === Node.ELEMENT_NODE && child.nodeName === nodeName) res.push(child);
   }
 
   return res;
 }
 
 function getImmediateNode(node: Node, nodeName: string): Node | undefined {
-  for(const child of node.childNodes) {
-    if(child.nodeType===Node.ELEMENT_NODE && child.nodeName===nodeName) return child;
+  for (const child of node.childNodes) {
+    if (child.nodeType === Node.ELEMENT_NODE && child.nodeName === nodeName) return child;
   }
 }
 
@@ -230,7 +246,7 @@ type CapabilitiesLayerInfo = {
    * For example: `EPSG:4326`, `EPSG:3857`.
    */
   srs?: Array<string>;
-}
+};
 
 /**
  * Information about the map source capabilities.
@@ -238,68 +254,68 @@ type CapabilitiesLayerInfo = {
 type CapabilitiesInfo = {
   type: 'WMS' | 'WMTS';
   layers: Array<CapabilitiesLayerInfo>;
-}
+};
 
 /**
  * Function for extracting the map source settings from the WMS capabilities XML document.
  * This is a fallback function for the WMS map sources and may not cover all the cases.
  */
-export function parseWMSCapabilities(xml: string|XMLDocument): CapabilitiesInfo {
-  const doc = typeof(xml)==='string'?parseXML(xml):xml;
-  let info: CapabilitiesInfo={
+export function parseWMSCapabilities(xml: string | XMLDocument): CapabilitiesInfo {
+  const doc = typeof xml === 'string' ? parseXML(xml) : xml;
+  let info: CapabilitiesInfo = {
     type: 'WMS',
-    layers: []
-  }
+    layers: [],
+  };
   // Get all layer names from the XML document.
   // In WMS there can be multiple layers but not all of them are visible.
-  const layers=doc.querySelectorAll("Layer > Name");
-  for(const layerName of layers) {
-    const layer=layerName.parentElement;
-    if(!layer) continue;
-    const identifier=getImmediateNode(layer, 'Name')?.textContent;
-    const srs=getTextContent(getImmediateNodes(layer, 'SRS'));
-    const title=getImmediateNode(layer, 'Title')?.textContent;
-    const abstract=getImmediateNode(layer, 'Abstract')?.textContent;
+  const layers = doc.querySelectorAll('Layer > Name');
+  for (const layerName of layers) {
+    const layer = layerName.parentElement;
+    if (!layer) continue;
+    const identifier = getImmediateNode(layer, 'Name')?.textContent;
+    const srs = getTextContent(getImmediateNodes(layer, 'SRS'));
+    const title = getImmediateNode(layer, 'Title')?.textContent;
+    const abstract = getImmediateNode(layer, 'Abstract')?.textContent;
 
-    if(!identifier) continue;
+    if (!identifier) continue;
 
     info.layers.push({
       identifier: identifier,
       title: title || undefined,
       abstract: abstract || undefined,
       srs: srs,
-    })
+    });
 
     // console.log("WMS Layer: ", identifier, title, abstract, srs);
   }
   return info;
 }
 
-export function parseWMTSCapabilities(xml: string|XMLDocument): CapabilitiesInfo {
-  const doc = typeof(xml)==='string'?parseXML(xml):xml;
-  let info: CapabilitiesInfo={
+export function parseWMTSCapabilities(xml: string | XMLDocument): CapabilitiesInfo {
+  const doc = typeof xml === 'string' ? parseXML(xml) : xml;
+  let info: CapabilitiesInfo = {
     type: 'WMS',
-    layers: []
-  }
-  const layers=doc.querySelectorAll("Layer");
-    for(const layer of layers) {
-      // This will not work in JSDom
-      const title=getImmediateNode(layer, "Title")?.textContent;
-      const abstract=getImmediateNode(layer, "Abstract")?.textContent;
-      const identifier=getImmediateNode(layer, "Identifier")?.textContent;
-      const format=getTextContent(getImmediateNodes(layer, "Format"));
-      const srs=getTextContent(layer.querySelectorAll("TileMatrixSetLink > TileMatrixSet"));
-      if(!identifier) continue;
+    layers: [],
+  };
+  const layers = doc.querySelectorAll('Layer');
+  for (const layer of layers) {
+    // This will not work in JSDom
+    const title = getImmediateNode(layer, 'Title')?.textContent;
+    const abstract = getImmediateNode(layer, 'Abstract')?.textContent;
+    const identifier = getImmediateNode(layer, 'Identifier')?.textContent;
+    const format = getTextContent(getImmediateNodes(layer, 'Format'));
+    const srs = getTextContent(layer.querySelectorAll('TileMatrixSetLink > TileMatrixSet'));
+    if (!identifier) continue;
 
-      // console.log("WMTS Layer: ", title, abstract, identifier, format, srs);
-        // console.log(layer.textContent);
-      info.layers.push({
-        identifier: identifier,
-        title: title || undefined,
-        abstract: abstract || undefined,
-        srs: srs,
-        formats: format,
-      })
-    }
-    return info;
+    // console.log("WMTS Layer: ", title, abstract, identifier, format, srs);
+    // console.log(layer.textContent);
+    info.layers.push({
+      identifier: identifier,
+      title: title || undefined,
+      abstract: abstract || undefined,
+      srs: srs,
+      formats: format,
+    });
+  }
+  return info;
 }
