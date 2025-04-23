@@ -33,6 +33,10 @@ export function createXYZLayer(maps, url, name, maxZoom, tileSize, options) {
     tileSize = [256, 256]; // Default if not provided
   else throw new Error('Invalid tileSize parameter.');
 
+  if (typeof maxZoom !== 'number') {
+    maxZoom = 18;
+  }
+
   // https://developers.google.com/maps/documentation/javascript/reference/image-overlay#ImageMapType
   // https://developers.google.com/maps/documentation/javascript/reference/image-overlay#ImageMapTypeOptions
   return new maps.ImageMapType({
@@ -92,7 +96,7 @@ function WmsMapType(
     // google.maps.ImageMapTypeOptions interface
     name,
     alt,
-    maxZoom,
+    maxZoom = 18,
     minZoom,
     opacity,
   },
@@ -162,17 +166,19 @@ export function createWMSLayer(maps, url, layers, name, maxZoom, options) {
 
 /**
  * Create layer from provided description.
- * @param {MapSourceSettings} source
  * @param {google.maps} maps import Google Maps library
+ * @param {MapSourceSettings} source
  * @return {google.maps.ImageMapType|null} created layer or null if not supported
  **/
-function createLayerFromSource(source, maps) {
+function createLayerFromSource(maps, source) {
   if (!source || typeof source !== 'object') return null; // Invalid source
   switch (source.service) {
     case 'XYZ':
       return createXYZLayer(maps, source.url, source.name, source.maxZoom, source.tileSize, {});
     case 'WMS':
-      return createWMSLayer(maps, source.url, source.layers, source.name, source.maxZoom, {});
+      return createWMSLayer(maps, source.url, source.layers, source.name, source.maxZoom, {
+        opacity: source.opacity,
+      });
     default:
       console.warn('Unsupported map source: ', source.service);
       return null;
@@ -182,8 +188,8 @@ function createLayerFromSource(source, maps) {
 /**
  * Helper function to parse multiple map sources provided as a single string separated by new lines.
  * @param {string} mapSources - The map sources string.
- * @returns {[]}
- */
+ * @returns {Array<Partial<MapSourceSettings>>} - Array of parsed map sources.
+ **/
 function parseMapSources(mapSources) {
   if (typeof mapSources !== 'string') return [];
   const sources = mapSources.split('\n');
@@ -204,7 +210,158 @@ function parseMapSources(mapSources) {
 const viteMapSources = parseMapSources(import.meta.env.VITE_MAP_SOURCES);
 
 /**
+ * @typedef {Object} LayerInfo
+ * @property {Partial<MapSourceSettings>|null} source
+ * @property {string} name
+ * @property {string} label
+ * @property {number} order
+ * @property {string} [group]
+ * @property {google.maps.ImageMapType|null} [layer]
+ */
+
+/**
+ * @typedef {Object} LayersInfo
+ * @property {Array<LayerInfo>} backgrounds
+ * @property {Array<LayerInfo>} overlays
+ */
+
+/**
+ * Function to create layer info from provided sources.
+ * @param {Array<Partial<MapSourceSettings>>} sources
+ * @returns {LayersInfo}
+ */
+function createLayerInfo(sources) {
+  /** @type {Array<LayerInfo>} */
+  let backgrounds = [
+    {
+      name: 'satellite',
+      label: 'Satellite',
+      order: -3,
+      source: null,
+      layer: null,
+    },
+    {
+      name: 'roadmap',
+      label: 'Roadmap',
+      order: -2,
+      source: null,
+      layer: null,
+    },
+    {
+      name: 'terrain',
+      label: 'Terrain',
+      order: -1,
+      source: null,
+      layer: null,
+    },
+  ];
+  /** @type {Array<LayerInfo>} */
+  let overlays = [];
+  for (const source of sources) {
+    if (source.kind === 'background') {
+      backgrounds.push({
+        name: source.name,
+        label: source.label,
+        order: source.order,
+        source: source,
+      });
+    } else if (source.kind === 'transparent') {
+      overlays.push({
+        name: source.name,
+        label: source.label,
+        order: source.order,
+        group: source.group,
+        source: source,
+      });
+    }
+  }
+  backgrounds.sort((a, b) => a.order - b.order);
+  overlays.sort((a, b) => a.order - b.order);
+  return {
+    backgrounds,
+    overlays,
+  };
+}
+
+/**
+ * @typedef {Object} LayerManagerType
+ * @property {LayersInfo} layers
+ * @property {(map: google.maps.Map, maps: google.maps) => void} initLayerManager
+ */
+
+/**
+ * Sync Google Map layers based on the filter state.
+ * @param {google.maps.Map} map
+ * @param {google.maps} maps
+ * @param filterState
+ * @param {LayersInfo} layers
+ */
+function syncGoogleMap(map, maps, filterState, layers) {
+  // Control background layer of Google Map.
+  let background = filterState.map_background;
+  if (background === null || background === true) {
+    background = maps.MapTypeId.SATELLITE;
+  } else if (background === false) {
+    background = maps.MapTypeId.ROADMAP;
+  }
+  map.setMapTypeId(background);
+
+  // Get current state of overlay layers.
+  const stateOverlays = {};
+  for (const name of Object.keys(filterState)) {
+    if (!name.startsWith('overlay_')) continue;
+    const overlayName = name.substring('overlay_'.length);
+    stateOverlays[overlayName] = filterState[name];
+  }
+
+  // Visible in map
+  const mapOverlays = {};
+  const toRemove = [];
+  map.overlayMapTypes.forEach((layer, index) => {
+    mapOverlays[layer.name] = true;
+    if (stateOverlays[layer.name] !== true) {
+      toRemove.push(index);
+    }
+  });
+  // Sync state with visible layers
+  // 1. Remove layers that are not in the state (in reverse order).
+  for (let i = toRemove.length - 1; i >= 0; i--) {
+    const index = toRemove[i];
+    const removed = map.overlayMapTypes.removeAt(index);
+    console.log('Layer removed: ', removed.name);
+  }
+  // 2. Add layers that are in the state but not in the map.
+  for (const name of Object.keys(stateOverlays)) {
+    if (!stateOverlays[name]) continue;
+    if (mapOverlays[name]) continue; // Already in the map
+    const layerInfo = layers.overlays.find((layer) => layer.name === name);
+    if (!layerInfo) {
+      console.warn('Layer not found: ', name);
+      continue;
+    }
+    let layer = layerInfo.layer;
+    if (!layer) {
+      layer = createLayerFromSource(maps, layerInfo.source);
+      if (layer) {
+        layerInfo.layer = layer;
+      } else {
+        console.warn('Layer not created: ', layerInfo.source);
+        continue;
+      }
+    }
+    if (layer) {
+      layer.name = name;
+      map.overlayMapTypes.insertAt(0, layer);
+      console.log('Layer added: ', layer.name);
+    } else {
+      console.warn('Layer not created: ', layerInfo.source);
+    }
+  }
+}
+
+/**
  * Hook for controlling map layers.
+ * @return {LayerManagerType}
  */
 export default function useLayerManager(filterState) {
   const [map, setMap] = useState(null);
@@ -215,44 +372,53 @@ export default function useLayerManager(filterState) {
     maps,
   };
 
+  const layers = useMemo(() => createLayerInfo(viteMapSources), []);
+
   useEffect(() => {
-    /**
-     * @type {google.maps.Map}
-     */
+    /** @type {google.maps.Map} */
     const map = mapState.current.map;
-    /**
-     * @type {google.maps}
-     */
+    /** @type {google.maps} */
     const maps = mapState.current.maps;
     if (!map || !maps) return;
-
-    // Control background layer of Google Map.
-    map.setMapTypeId(
-      filterState.map_background ? maps.MapTypeId.SATELLITE : maps.MapTypeId.ROADMAP,
-    );
-  }, [filterState, mapState]);
+    syncGoogleMap(map, maps, filterState, layers);
+  }, [filterState, mapState, layers]);
 
   return useMemo(
     () => ({
+      layers,
+
       /**
        * @param {google.maps.Map} map
        * @param {google.maps} maps
        */
       initLayerManager: (map, maps) => {
-        console.log('initLayerManager', map, viteMapSources);
+        // console.log('initLayerManager', map, viteMapSources);
         setMap(map);
         setMaps(maps);
-        // Register available layers.
-        // map.mapTypes.set('OSM', createOpenStreetMapsLayer(maps));
-        // const gp=createWMSLayer(maps,
-        //     'https://mapy.geoportal.gov.pl/wss/service/PZGIK/ORTO/WMS/HighResolution',
-        //     'Raster',
-        //     'Geoportal',
-        //     18);
-        // console.log("Create WMS Layer: ", gp);
-        // map.mapTypes.set('GeoPortal', gp);
+        // Register all background layers
+        if (Array.isArray(viteMapSources)) {
+          for (const source of viteMapSources) {
+            // Register only background layers
+            if (source.kind !== 'background') continue;
+
+            const layer = createLayerFromSource(maps, source);
+            if (layer && source.name) {
+              try {
+                map.mapTypes.set(source.name, layer);
+                console.log('Layer added: ', source.name);
+              } catch (e) {
+                console.warn('Error adding layer: ', e);
+                console.log(source, layer);
+              }
+            } else {
+              console.warn('Layer not added: ', source);
+            }
+          }
+        }
+        // Setup initial state
+        syncGoogleMap(map, maps, filterState, layers);
       },
     }),
-    [setMap, setMaps],
+    [setMap, setMaps, layers],
   );
 }

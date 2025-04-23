@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { useTranslation } from 'react-i18next';
 import styles from './styles.module.scss';
@@ -133,7 +133,7 @@ export default function Map({ history, isCompactSideMenu }) {
     },
   ] = useDrawingManager();
 
-  const { initLayerManager } = useLayerManager(filterSettings);
+  const { initLayerManager, layers } = useLayerManager(filterSettings);
 
   useEffect(() => {
     if (drawingState.pointChanged) dispatch(setIsRedrawing(true));
@@ -354,6 +354,13 @@ export default function Map({ history, isCompactSideMenu }) {
       dispatch(setMapFilterShowAll(farm_id));
     } else if (locationType === 'hide_all') {
       dispatch(setMapFilterHideAll(farm_id));
+    } else if (locationType && typeof locationType === 'object') {
+      dispatch(
+        setMapFilterSetting({
+          farm_id,
+          ...locationType,
+        }),
+      );
     } else {
       const payload = {};
       payload[locationType] = !filterSettings[locationType];
@@ -548,6 +555,7 @@ export default function Map({ history, isCompactSideMenu }) {
             availableFilterSettings={availableFilterSettings}
             isMapFilterSettingActive={isMapFilterSettingActive}
             isCompactSideMenu={isCompactSideMenu}
+            layers={layers}
           />
         )}
         {showExportModal && (

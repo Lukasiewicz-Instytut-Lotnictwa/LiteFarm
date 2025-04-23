@@ -36,9 +36,19 @@ export type MapLayerFormat = 'image/png' | 'image/jpeg' | 'image/svg+xml' | stri
  */
 export type MapSourceSettings = {
   /**
+   * Name/identifier of the map source.
+   */
+  name: string;
+
+  /**
    * URL to the map source like WMS, WMTS oraz XYZ.
    */
   url: string;
+
+  /**
+   * Layers to be displayed on the map from WMS/WMTS.
+   */
+  layers?: string;
 
   /**
    * Type of map source.
@@ -82,6 +92,16 @@ export type MapSourceSettings = {
    * Size of the tile in pixels.
    */
   tileSize?: number | [number, number];
+
+  /**
+   * Order of the map source in the layer switcher.
+   */
+  order?: number;
+
+  /**
+   * Opacity of the map source.
+   */
+  opacity?: number;
 };
 
 /**
@@ -118,10 +138,15 @@ export function parseMapSourceURL(url: string): Partial<MapSourceSettings> {
   let group: string | undefined;
   let format: MapLayerFormat | undefined;
   let legend: string | false | undefined;
+  let name: string | undefined;
+  let layers: string | undefined;
+  let maxZoom: number | undefined;
+  let order: number = 0;
+  let opacity: number | undefined;
 
   // Get extra parameters from the URL fragment part.
   for (const [key, value] of sp.entries()) {
-    switch (key) {
+    switch (key.toLowerCase()) {
       case 'service': {
         const serviceParam = value.toUpperCase();
         if (serviceParam === 'WMS') service = 'WMS';
@@ -144,11 +169,32 @@ export function parseMapSourceURL(url: string): Partial<MapSourceSettings> {
       case 'label':
         label = value;
         break;
+      case 'name':
+        name = value;
+        break;
+      case 'layers':
+        layers = value;
+        break;
       case 'group':
         group = value;
         break;
       case 'format':
         format = value as MapLayerFormat;
+        break;
+      case 'order': {
+        const orderParam = parseInt(value);
+        if (!isNaN(orderParam)) order = orderParam;
+        break;
+      }
+      case 'opacity': {
+        const opacityParam = parseFloat(value);
+        if (!isNaN(opacityParam)) {
+          opacity = opacityParam;
+        }
+        break;
+      }
+      case 'maxzoom':
+        maxZoom = parseInt(value);
         break;
       case 'legend':
         if (
@@ -178,6 +224,11 @@ export function parseMapSourceURL(url: string): Partial<MapSourceSettings> {
     group: group,
     format: format,
     legend: legend,
+    name: name,
+    layers: layers,
+    maxZoom: maxZoom,
+    order: order,
+    opacity: opacity,
   };
 }
 

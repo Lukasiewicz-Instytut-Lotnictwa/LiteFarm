@@ -19,7 +19,7 @@ const initialState = {
   water_valve: true,
   soil_sample_location: true,
   farm_site_boundary: true,
-  map_background: true,
+  map_background: null,
   label: true,
   sensor: true,
   sensor_array: true,

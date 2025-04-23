@@ -35,6 +35,7 @@ export default function MapDrawer({
   availableFilterSettings,
   headerTitle,
   isCompactSideMenu,
+  layers,
 }) {
   const { t } = useTranslation();
 
@@ -184,16 +185,44 @@ export default function MapDrawer({
       </div>
 
       <List>
-        {!!filterSettings && (
-          <MapDrawerMenuItem
-            isFilterMenuItem={!!filterSettings}
-            name={t('FARM_MAP.MAP_FILTER.SATELLITE')}
-            onClick={() => onMenuItemClick('map_background')}
-            isFiltered={!filterSettings['map_background']}
-          >
-            <MapBackground />
-          </MapDrawerMenuItem>
-        )}
+        {/*{!!filterSettings && (*/}
+        {/*  <MapDrawerMenuItem*/}
+        {/*    isFilterMenuItem={!!filterSettings}*/}
+        {/*    name={t('FARM_MAP.MAP_FILTER.SATELLITE')}*/}
+        {/*    onClick={() => onMenuItemClick('map_background')}*/}
+        {/*    isFiltered={!filterSettings['map_background']}*/}
+        {/*  >*/}
+        {/*    <MapBackground />*/}
+        {/*  </MapDrawerMenuItem>*/}
+        {/*)}*/}
+        {filterSettings &&
+          layers &&
+          layers.backgrounds.map(({ name, label }) => (
+            <MapDrawerMenuItem
+              key={name}
+              isFilterMenuItem={!!filterSettings}
+              name={label}
+              onClick={() => onMenuItemClick({ map_background: name })}
+              isFiltered={filterSettings.map_background !== name}
+            >
+              <MapBackground />
+            </MapDrawerMenuItem>
+          ))}
+        {filterSettings &&
+          layers &&
+          layers.overlays.map(({ name, label }) => (
+            <MapDrawerMenuItem
+              key={name}
+              isFilterMenuItem={!!filterSettings}
+              name={label}
+              onClick={() =>
+                onMenuItemClick({ ['overlay_' + name]: !filterSettings['overlay_' + name] })
+              }
+              isFiltered={!filterSettings['overlay_' + name]}
+            >
+              <MapBackground />
+            </MapDrawerMenuItem>
+          ))}
 
         {!!filterSettings && !!areaImgDict.length && (
           <MapDrawerMenuItem

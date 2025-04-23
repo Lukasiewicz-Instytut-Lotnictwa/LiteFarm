@@ -44,6 +44,7 @@ export default function PureMapFooter({
   },
   isMapFilterSettingActive = false,
   isCompactSideMenu,
+  layers,
 }) {
   const { t } = useTranslation();
 
@@ -102,6 +103,7 @@ export default function PureMapFooter({
         availableFilterSettings={availableFilterSettings}
         onMenuItemClick={onFilterMenuClick}
         isCompactSideMenu={isCompactSideMenu}
+        layers={layers}
       />
       <MapDrawer
         key={'add'}
