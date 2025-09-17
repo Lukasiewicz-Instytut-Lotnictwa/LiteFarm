@@ -9,6 +9,7 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { Error } from '../Typography';
 import { NewReleaseCard } from '../Card/NewReleaseCard/NewReleaseCard';
+import FruitAppAttribution from '@components/Ilot/FruitAppAttribution.jsx';
 
 const inputClasses = {
   container: {
@@ -59,7 +60,9 @@ export default function PureCustomSignUp({
           </div>
         </div>
       </div>
-      <Footer style={{ position: 'relative', bottom: 0, marginTop: '12px' }}>
+      <Footer
+        style={{ position: 'relative', bottom: 0, marginTop: '12px', flexDirection: 'column' }}
+      >
         <div className={styles.bottomButton}>
           <Button
             disabled={disabled}
@@ -77,6 +80,7 @@ export default function PureCustomSignUp({
           </Button>
         </div>
       </Footer>
+      <FruitAppAttribution />
     </form>
   );
 }
