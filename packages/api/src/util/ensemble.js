@@ -29,7 +29,10 @@ import endPoints from '../endPoints.js';
 import { fileURLToPath } from 'url';
 import { toSnakeCase } from './util.js';
 import { customError } from './customErrors.js';
-const { ensembleAPI } = endPoints;
+const { ensembleAPI: ensembleDefaultAPI } = endPoints;
+
+// Allow overriding the Ensemble API URL via environment variable for other sensors providers or testing
+const ensembleAPI = process.env.ENSEMBLE_API_URL || ensembleDefaultAPI;
 
 // Equivalency mapping between Ensemble and convert-units for the new sensor readings controller
 const ESCI_TO_CONVERT_UNITS_MAP = {
