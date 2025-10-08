@@ -56,7 +56,7 @@ const externalController = {
       // Get date of notification if provided
       let date;
       if (typeof body.date === 'number') {
-        date = new Date().toISOString().split('T')[0];
+        date = new Date(body.date).toISOString().split('T')[0];
       } else if (typeof body.date === 'string') {
         date = body.date;
       } else {
