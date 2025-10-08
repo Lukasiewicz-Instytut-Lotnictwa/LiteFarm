@@ -18,7 +18,8 @@ import ExternalController from '../controllers/externalController.js';
 
 const router = express.Router();
 
-// router.get('/refresh');
+// All routes in this router require authentication
+router.use(ExternalController.authenticateExternalRequest());
 
 router.post('/push_notification/:farm_id', ExternalController.pushNotification());
 

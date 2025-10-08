@@ -17,9 +17,51 @@ import UserFarmModel from '../models/userFarmModel.js';
 import NotificationUser from '../models/notificationUserModel.js';
 
 /**
+ * List of allowed authorization keys for external API.
+ * These should be set in the environment variable `EXTERNAL_API_AUTH_KEYS`
+ * as a comma-separated list of keys.
+ *
+ * Example: `EXTERNAL_API_AUTH_KEYS=key1,key2,key3`
+ * Then in the request, the key should be provided in the `Authorization` header with Bearer scheme:
+ * `Authorization: Bearer key1`.
+ *
+ * @type {string[]}
+ */
+const allowedAuthorizationKeys = process.env.EXTERNAL_API_AUTH_KEYS
+  ? process.env.EXTERNAL_API_AUTH_KEYS.split(',').map((key) => key.trim())
+  : [];
+
+/**
  * Controller for external API endpoints.
  */
 const externalController = {
+  authenticateExternalRequest() {
+    if (allowedAuthorizationKeys.length === 0) {
+      // No keys configured, reject all requests
+      return (_req, res, _next) => {
+        return res
+          .status(401)
+          .send({ error: 'Unauthorized: Missing or invalid Authorization header' });
+      };
+    }
+
+    return (req, res, next) => {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res
+          .status(401)
+          .send({ error: 'Unauthorized: Missing or invalid Authorization header' });
+      }
+      const authKey = authHeader.substring(7);
+      if (!allowedAuthorizationKeys.includes(authKey)) {
+        return res
+          .status(401)
+          .send({ error: 'Unauthorized: Missing or invalid Authorization header' });
+      }
+      next();
+    };
+  },
+
   /**
    * An endpoint to push notifications to the client.
    * This allows to add a notification to LiteFarm from external sources.
