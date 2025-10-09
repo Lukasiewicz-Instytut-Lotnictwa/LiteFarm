@@ -15,6 +15,7 @@
 
 import UserFarmModel from '../models/userFarmModel.js';
 import NotificationUser from '../models/notificationUserModel.js';
+import logger from '../common/logger.js';
 
 /**
  * List of allowed authorization keys for external API.
@@ -94,6 +95,7 @@ const externalController = {
       if (!body.title || !body.message) {
         return resp.status(400).send({ error: 'Title and message are required' });
       }
+      // logger.debug("Pushing external notification", { body, farm_id });
 
       // Get date of notification if provided
       let date;
@@ -109,28 +111,38 @@ const externalController = {
       if (!Array.isArray(body.users) || body.users.length === 0) {
         // if no users are provided, send to all active users
         users = activeUsers;
+        // logger.debug("No users provided, sending to all active users", { users });
       } else {
         // Send to users provided in the request but limit to active users
         users = activeUsers.filter((user) => body.users.includes(user.user_id));
+        // logger.debug("Sending to provided users", { users });
+      }
+      if (users.length === 0) {
+        return resp.status(400).send({ error: 'No valid users to send notification to' });
       }
 
-      await NotificationUser.notify(
-        {
-          title: body.title,
-          body: body.message,
-          variables: [],
-          ref: body.ref,
-          context: {
-            task_translation_key: body.task_translation_key,
-            icon_translation_key: body.icon_translation_key,
-            notification_type: body.notification_type,
-            notification_date: date,
+      try {
+        await NotificationUser.notify(
+          {
+            title: body.title,
+            body: body.message,
+            variables: [],
+            ref: body.ref,
+            context: {
+              task_translation_key: body.task_translation_key,
+              icon_translation_key: body.icon_translation_key,
+              notification_type: body.notification_type,
+              notification_date: date,
+            },
+            farm_id,
           },
-          farm_id,
-        },
-        users,
-      );
-      resp.status(200).send({ message: 'Notification sent' });
+          users.map((u) => u.user_id),
+        );
+        return resp.status(200).send({ message: 'Notification sent' });
+      } catch (e) {
+        logger.error('Error sending notification', { error: e });
+        return resp.status(500).send({ error: 'Error sending notification' });
+      }
     };
   },
 };
